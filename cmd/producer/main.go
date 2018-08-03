@@ -13,9 +13,10 @@ import (
 
 var (
 	periodParam = kingpin.Flag("period", "Time between ticks in microseconds").Default("500000").String()
-	brokerList  = kingpin.Flag("brokerList", "List of brokers to connect").Default("localhost:9092").Strings()
-	topicto     = kingpin.Flag("topicto", "Topic to name").Default("topicto").String()
-	topicfrom   = kingpin.Flag("topicfrom", "Topic from name").Default("topicfrom").String()
+	//	brokerList  = kingpin.Flag("brokerList", "List of brokers to connect").Default("localhost:9092").Strings()
+	brokerList = kingpin.Flag("brokerList", "List of brokers to connect").Default("206.189.77.86:9092").Strings()
+	topicto    = kingpin.Flag("topicto", "Topic to name").Default("topicto").String()
+	topicfrom  = kingpin.Flag("topicfrom", "Topic from name").Default("topicfrom").String()
 )
 
 func main() {
@@ -27,12 +28,16 @@ func main() {
 		panic(err)
 	}
 
+	//brokers := *brokerList
+	brokers := []string{"206.189.77.86:9092"}
+
 	configP := sarama.NewConfig()
 	configP.Producer.RequiredAcks = sarama.NoResponse
 	configP.Producer.Retry.Max = 5
 	configP.Producer.Return.Successes = true
+	configP.Version = sarama.V1_0_0_0
 
-	producer, err := sarama.NewSyncProducer(*brokerList, configP)
+	producer, err := sarama.NewSyncProducer(brokers, configP)
 	if err != nil {
 		panic(err)
 	}
@@ -45,8 +50,9 @@ func main() {
 	// ----- Config Consumer -----
 	configC := sarama.NewConfig()
 	configC.Consumer.Return.Errors = true
+	configC.Version = sarama.V1_0_0_0
 
-	master, err := sarama.NewConsumer(*brokerList, configC)
+	master, err := sarama.NewConsumer(brokers, configC)
 	if err != nil {
 		panic(err)
 	}
