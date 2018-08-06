@@ -12,11 +12,9 @@ import (
 )
 
 var (
-	periodParam = kingpin.Flag("period", "Time between ticks in microseconds").Default("500000").String()
-	//	brokerList  = kingpin.Flag("brokerList", "List of brokers to connect").Default("localhost:9092").Strings()
-	brokerList = kingpin.Flag("brokerList", "List of brokers to connect").Default("206.189.77.86:9092").Strings()
-	topicto    = kingpin.Flag("topicto", "Topic to name").Default("topicto").String()
-	topicfrom  = kingpin.Flag("topicfrom", "Topic from name").Default("topicfrom").String()
+	periodParam = kingpin.Flag("ticksperiod", "Time between ticks in microseconds").Default("500000").String()
+	brokerList  = kingpin.Flag("brokerList", "List of brokers to connect").Default("localhost:9092").Strings()
+	topicto     = kingpin.Flag("topic", "Topic to name").Default("topic007").String()
 )
 
 func main() {
@@ -28,8 +26,7 @@ func main() {
 		panic(err)
 	}
 
-	//brokers := *brokerList
-	brokers := []string{"206.189.77.86:9092"}
+	brokers := *brokerList
 
 	configP := sarama.NewConfig()
 	configP.Producer.RequiredAcks = sarama.NoResponse
@@ -47,27 +44,6 @@ func main() {
 		}
 	}()
 
-	// ----- Config Consumer -----
-	configC := sarama.NewConfig()
-	configC.Consumer.Return.Errors = true
-	configC.Version = sarama.V1_0_0_0
-
-	master, err := sarama.NewConsumer(brokers, configC)
-	if err != nil {
-		panic(err)
-	}
-
-	defer func() {
-		if err := master.Close(); err != nil {
-			panic(err)
-		}
-	}()
-
-	consumer, err := master.ConsumePartition(*topicfrom, 0, sarama.OffsetOldest)
-	if err != nil {
-		panic(err)
-	}
-
 	signals := make(chan os.Signal, 1)
 	signal.Notify(signals, os.Interrupt)
 	doneCh := make(chan struct{})
@@ -77,6 +53,7 @@ func main() {
 	go func() {
 		for {
 			select {
+
 			case <-ticker.C:
 				timestamp := strconv.FormatInt(time.Now().UTC().UnixNano(), 10)
 
@@ -90,19 +67,6 @@ func main() {
 				}
 
 				//fmt.Printf("%v Message is sent to topic: %s partition: %d offset: %d\n", t, *topicto, partition, offset)
-
-			case err := <-consumer.Errors():
-				fmt.Println(err)
-
-			case msg := <-consumer.Messages():
-				curTime := time.Now().UTC().UnixNano()
-
-				receivedTime, err := strconv.ParseInt(string(msg.Value), 10, 64)
-				if err == nil {
-					deltaTime := float64(curTime-receivedTime) / float64(time.Millisecond)
-
-					fmt.Printf("deltaTime=%v\n", deltaTime)
-				}
 
 			case <-signals:
 				fmt.Println("Interrupt is detected")
