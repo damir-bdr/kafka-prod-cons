@@ -55,7 +55,7 @@ func main() {
 			select {
 
 			case <-ticker.C:
-				timestamp := strconv.FormatInt(time.Now().UTC().UnixNano(), 10)
+				timestamp := strconv.FormatInt(time.Now().UTC().UnixNano()/1000, 10)
 
 				msg := &sarama.ProducerMessage{
 					Topic: *topicto,

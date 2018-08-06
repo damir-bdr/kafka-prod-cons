@@ -16,7 +16,7 @@ var (
 	brokerList = kingpin.Flag("brokerList", "List of brokers to connect").Default("localhost:9092").Strings()
 	topicto    = kingpin.Flag("topic", "Topic to name").Default("topic007").String()
 	partition  = kingpin.Flag("partition", "Partition number").Default("0").String()
-	statPeriod = kingpin.Flag("statperiod", "Statistics period in seconds").Default("5").String()
+	statPeriod = kingpin.Flag("statperiod", "Statistics period in seconds").Default("10").String()
 	offsetType = kingpin.Flag("offsetType", "Offset Type (OffsetNewest | OffsetOldest)").Default("-1").Int()
 )
 
@@ -47,7 +47,7 @@ func main() {
 		}
 	}()
 
-	consumer, err := master.ConsumePartition(*topicto, 0, sarama.OffsetOldest)
+	consumer, err := master.ConsumePartition(*topicto, 0, sarama.OffsetNewest)
 	if err != nil {
 		panic(err)
 	}
@@ -56,6 +56,11 @@ func main() {
 	signals := make(chan os.Signal, 1)
 	signal.Notify(signals, os.Interrupt)
 	doneCh := make(chan struct{})
+
+	var lastOffset int64
+	defer func() {
+		fmt.Printf("Consumer is terminated, lastOffset=%d\n", lastOffset)
+	}()
 
 	go func() {
 
@@ -70,11 +75,12 @@ func main() {
 				fmt.Println(err)
 
 			case msg := <-consumer.Messages():
-				curTime := time.Now().UTC().UnixNano()
+				lastOffset = msg.Offset
+				curTime := time.Now().UTC().UnixNano() / 1000
 
 				receivedMsgTime, err := strconv.ParseInt(string(msg.Value), 10, 64)
 				if err == nil {
-					data = append(data, float64(curTime-receivedMsgTime)/float64(time.Millisecond))
+					data = append(data, float64(curTime-receivedMsgTime)/float64(1000))
 				}
 
 				if t0 == 0 {
@@ -82,7 +88,7 @@ func main() {
 				}
 				sumtime += (curTime - t0)
 
-				if time.Duration(sumtime) >= time.Duration(statTime)*time.Duration(time.Second) {
+				if sumtime >= int64(statTime)*1000000 {
 
 					min, _ := stats.Min(data)
 					med, _ := stats.Median(data)
