@@ -13,11 +13,11 @@ import (
 )
 
 var (
-	brokerList = kingpin.Flag("brokerList", "List of brokers to connect").Default("localhost:9092").Strings()
-	topicto    = kingpin.Flag("topic", "Topic to name").Default("topic007").String()
-	partition  = kingpin.Flag("partition", "Partition number").Default("0").String()
-	statPeriod = kingpin.Flag("statperiod", "Statistics period in seconds").Default("10").String()
-	offsetType = kingpin.Flag("offsetType", "Offset Type (OffsetNewest | OffsetOldest)").Default("-1").Int()
+	brokerList  = kingpin.Flag("brokerList", "List of brokers to connect").Default("localhost:9092").Strings()
+	topicto     = kingpin.Flag("topic", "Topic to name").Default("topic007").String()
+	partition   = kingpin.Flag("partition", "Partition number").Default("0").String()
+	offsetParam = kingpin.Flag("offset", "Offset").Default("0").String()
+	statPeriod  = kingpin.Flag("statperiod", "Statistics period in seconds").Default("10").String()
 )
 
 func main() {
@@ -26,6 +26,12 @@ func main() {
 	statTime, err := strconv.Atoi(*statPeriod)
 	if err != nil {
 		fmt.Printf("Cannot parse statistics period arg %s\n", *statPeriod)
+		panic(err)
+	}
+
+	offset, err := strconv.ParseInt(*offsetParam, 10, 64)
+	if err != nil {
+		fmt.Printf("Cannot parse offset arg %s\n", *statPeriod)
 		panic(err)
 	}
 
@@ -47,7 +53,13 @@ func main() {
 		}
 	}()
 
-	consumer, err := master.ConsumePartition(*topicto, 0, sarama.OffsetNewest)
+	var consumer sarama.PartitionConsumer
+	if offset > 0 {
+		consumer, err = master.ConsumePartition(*topicto, 0, offset)
+	} else {
+		consumer, err = master.ConsumePartition(*topicto, 0, sarama.OffsetNewest)
+	}
+
 	if err != nil {
 		panic(err)
 	}
@@ -100,6 +112,8 @@ func main() {
 					t0 = 0
 					sumtime = 0
 				}
+
+				t0 = curTime
 
 			case <-signals:
 				fmt.Println("Interrupt is detected")
