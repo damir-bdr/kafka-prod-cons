@@ -51,11 +51,21 @@ func main() {
 	ticker := time.NewTicker(time.Duration(d) * time.Microsecond)
 
 	go func() {
+
+		firstTime := 0
+
 		for {
 			select {
-
 			case <-ticker.C:
-				timestamp := strconv.FormatInt(time.Now().UTC().UnixNano()/1000, 10)
+
+				var timestamp string
+
+				if firstTime == 0 {
+					firstTime = 1
+					timestamp = strconv.FormatInt(0, 10)
+				} else {
+					timestamp = strconv.FormatInt(time.Now().UTC().UnixNano()/1000, 10)
+				}
 
 				msg := &sarama.ProducerMessage{
 					Topic: *topicto,

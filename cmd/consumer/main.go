@@ -81,6 +81,12 @@ func main() {
 
 		data := []float64{}
 
+		clear := func() {
+			data = data[:0]
+			t0 = 0
+			sumtime = 0
+		}
+
 		for {
 			select {
 			case err := <-consumer.Errors():
@@ -91,8 +97,18 @@ func main() {
 				curTime := time.Now().UTC().UnixNano() / 1000
 
 				receivedMsgTime, err := strconv.ParseInt(string(msg.Value), 10, 64)
+
 				if err == nil {
+					if receivedMsgTime == 0 {
+						fmt.Println("Received a clearing message")
+						clear()
+						break
+					}
 					data = append(data, float64(curTime-receivedMsgTime)/float64(1000))
+				} else {
+					fmt.Printf("Cannot parse received timestamp %v !", msg.Value)
+					clear()
+					break
 				}
 
 				if t0 == 0 {
@@ -108,9 +124,7 @@ func main() {
 
 					fmt.Printf("Time in kafka topic min: %f median: %f max: %f\n", min, med, max)
 
-					data = data[:0]
-					t0 = 0
-					sumtime = 0
+					clear()
 				}
 
 				t0 = curTime
