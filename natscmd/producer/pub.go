@@ -14,7 +14,7 @@ import (
 
 var (
 	periodParam = kingpin.Flag("ticksperiod", "Time between ticks in microseconds").Default("500000").String()
-	broker      = kingpin.Flag("broker", "The nat server URL").Default(nats.DefaultURL).String()
+	broker      = kingpin.Flag("broker", "The nats server URL nats://localhost:4222").Default(nats.DefaultURL).String()
 	topicto     = kingpin.Flag("topic", "Topic to name").Default("topic007").String()
 )
 
@@ -61,8 +61,6 @@ func main() {
 
 				if err := nc.LastError(); err != nil {
 					log.Fatal(err)
-				} else {
-					log.Printf("Published [%s] : '%s'\n", *topicto, timestamp)
 				}
 
 			case <-signals:
