@@ -71,8 +71,9 @@ func main() {
 			min, _ := stats.Min(data)
 			med, _ := stats.Median(data)
 			max, _ := stats.Max(data)
+			standartDeviat, _ := stats.StandardDeviation(data)
 
-			fmt.Printf("Time spent in nats min: %f median: %f max: %f\n", min, med, max)
+			fmt.Printf("Time spent in nats min: %f median: %f max: %f devitation: %f amount data: %d \n", min, med, max, standartDeviat, len(data))
 
 			clear()
 		}
