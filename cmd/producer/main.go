@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/signal"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/Shopify/sarama"
@@ -13,7 +14,7 @@ import (
 
 var (
 	periodParam = kingpin.Flag("ticksperiod", "Time between ticks in microseconds").Default("500000").String()
-	brokerList  = kingpin.Flag("brokerList", "List of brokers to connect").Default("localhost:9092").Strings()
+	brokerList  = kingpin.Flag("brokerList", "List of brokers to connect").Default("localhost:9092").String()
 	topicto     = kingpin.Flag("topic", "Topic to name").Default("topic007").String()
 )
 
@@ -26,7 +27,7 @@ func main() {
 		panic(err)
 	}
 
-	brokers := *brokerList
+	brokers := strings.Split(*brokerList, ",")
 
 	configP := sarama.NewConfig()
 	configP.Producer.RequiredAcks = sarama.NoResponse

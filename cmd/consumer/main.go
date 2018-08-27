@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/signal"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/Shopify/sarama"
@@ -13,7 +14,7 @@ import (
 )
 
 var (
-	brokerList  = kingpin.Flag("brokerList", "List of brokers to connect").Default("localhost:9092").Strings()
+	brokerList  = kingpin.Flag("brokerList", "List of brokers to connect").Default("localhost:9092").String()
 	topicto     = kingpin.Flag("topic", "Topic to name").Default("topic007").String()
 	partition   = kingpin.Flag("partition", "Partition number").Default("0").String()
 	offsetParam = kingpin.Flag("offset", "Offset").Default("0").String()
@@ -40,7 +41,7 @@ func main() {
 	configC.Consumer.Return.Errors = true
 	configC.Version = sarama.V1_0_0_0
 
-	brokers := *brokerList
+	brokers := strings.Split(*brokerList, ",")
 
 	master, err := sarama.NewConsumer(brokers, configC)
 	if err != nil {
